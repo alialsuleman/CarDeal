@@ -21,4 +21,3 @@ const imageSchema = new mongoose_1.Schema({
     timestamps: true
 });
 exports.ImageModel = (0, mongoose_1.model)('Image', imageSchema);
-//# sourceMappingURL=Img.js.map

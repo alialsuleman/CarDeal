@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -17,7 +8,7 @@ const rental_1 = __importDefault(require("../models/rental"));
 const Car_1 = __importDefault(require("../models/Car"));
 const mongoose_1 = require("mongoose");
 const notification_controller_1 = require("./notification.controller");
-const createRental = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const createRental = async (req, res) => {
     try {
         if (!(0, mongoose_1.isValidObjectId)(req.body.carId)) {
             return res.status(400).json({
@@ -27,7 +18,7 @@ const createRental = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         }
         const { carId, startDate, endDate } = req.body;
         const userId = res.locals.userId;
-        const car = yield Car_1.default.findById(carId);
+        const car = await Car_1.default.findById(carId);
         if (!car) {
             return res.status(404).json({
                 success: false,
@@ -49,7 +40,7 @@ const createRental = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 message: 'End date must be after start date'
             });
         }
-        const ok = yield (0, exports.isCarAvailable)(carId, startDate, endDate);
+        const ok = await (0, exports.isCarAvailable)(carId, startDate, endDate);
         console.log(ok);
         if (!ok) {
             return res.status(409).json({
@@ -68,7 +59,7 @@ const createRental = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             totalPrice,
             status: 'pending'
         });
-        yield newRental.save();
+        await newRental.save();
         // 7. Prepare response
         const response = {
             success: true,
@@ -107,9 +98,9 @@ const createRental = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             message: 'Failed to create rental'
         });
     }
-});
+};
 exports.createRental = createRental;
-const isCarAvailable = (carId, startDate2, endDate2) => __awaiter(void 0, void 0, void 0, function* () {
+const isCarAvailable = async (carId, startDate2, endDate2) => {
     const conditions = {
         car: carId,
         // $or: [
@@ -118,7 +109,7 @@ const isCarAvailable = (carId, startDate2, endDate2) => __awaiter(void 0, void 0
         //     { startDate: { $lte: startDate2 }, endDate: { $gte: endDate2 } },
         // ]
     };
-    const existingRental = yield rental_1.default.find(conditions);
+    const existingRental = await rental_1.default.find(conditions);
     let x = false;
     for (let elment of existingRental) {
         //console.log(new Date(startDate2), endDate2, new Date(elment.startDate), elment.endDate);
@@ -138,15 +129,15 @@ const isCarAvailable = (carId, startDate2, endDate2) => __awaiter(void 0, void 0
     }
     console.log(existingRental);
     return !x;
-});
+};
 exports.isCarAvailable = isCarAvailable;
-const getAvailableCars = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getAvailableCars = async (req, res) => {
     try {
         const { startDate, endDate } = req.body;
-        const allCars = yield Car_1.default.find({ purpose: "rent" }).select('_id').lean();
+        const allCars = await Car_1.default.find({ purpose: "rent" }).select('_id').lean();
         const availableCars = [];
         for (const car of allCars) {
-            const isAvailable = yield (0, exports.isCarAvailable)(car._id, startDate, endDate);
+            const isAvailable = await (0, exports.isCarAvailable)(car._id, startDate, endDate);
             if (isAvailable) {
                 availableCars.push(car._id);
             }
@@ -162,9 +153,9 @@ const getAvailableCars = (req, res) => __awaiter(void 0, void 0, void 0, functio
         console.error('Error finding available cars:', error);
         throw new Error('Failed to retrieve available cars');
     }
-});
+};
 exports.getAvailableCars = getAvailableCars;
-const getUserRentals = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getUserRentals = async (req, res) => {
     const userId = res.locals.userId;
     if (!userId) {
         return res.status(400).json({
@@ -172,7 +163,7 @@ const getUserRentals = (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: 'User ID is required'
         });
     }
-    const rentals = yield rental_1.default.find({ user: userId })
+    const rentals = await rental_1.default.find({ user: userId })
         .sort({ createdAt: -1 })
         .lean();
     res.status(200).json({
@@ -180,9 +171,9 @@ const getUserRentals = (req, res) => __awaiter(void 0, void 0, void 0, function*
         count: rentals.length,
         data: rentals
     });
-});
+};
 exports.getUserRentals = getUserRentals;
-const getOwnerRentals = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getOwnerRentals = async (req, res) => {
     const ownerId = res.locals.userId;
     if (!ownerId) {
         return res.status(400).json({
@@ -190,7 +181,7 @@ const getOwnerRentals = (req, res) => __awaiter(void 0, void 0, void 0, function
             message: 'Owner ID is required'
         });
     }
-    const rentals = yield rental_1.default.find({ owner: ownerId })
+    const rentals = await rental_1.default.find({ owner: ownerId })
         .sort({ createdAt: -1 })
         .lean();
     res.status(200).json({
@@ -198,9 +189,9 @@ const getOwnerRentals = (req, res) => __awaiter(void 0, void 0, void 0, function
         count: rentals.length,
         data: rentals
     });
-});
+};
 exports.getOwnerRentals = getOwnerRentals;
-const getCarRentals = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getCarRentals = async (req, res) => {
     const carId = req.body.carId;
     const ownerId = res.locals.userId;
     ;
@@ -210,7 +201,7 @@ const getCarRentals = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             message: 'CarId ID is required'
         });
     }
-    const rentals = yield rental_1.default.find({ car: carId, owner: ownerId })
+    const rentals = await rental_1.default.find({ car: carId, owner: ownerId })
         .sort({ createdAt: -1 })
         .lean();
     res.status(200).json({
@@ -218,9 +209,9 @@ const getCarRentals = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         count: rentals.length,
         data: rentals
     });
-});
+};
 exports.getCarRentals = getCarRentals;
-const completeRental = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const completeRental = async (req, res) => {
     const { rentalId } = req.body;
     if (!(0, mongoose_1.isValidObjectId)(rentalId)) {
         return res.status(400).json({
@@ -228,7 +219,7 @@ const completeRental = (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: 'Invalid rental ID'
         });
     }
-    const updatedRental = yield rental_1.default.findByIdAndUpdate(rentalId, {
+    const updatedRental = await rental_1.default.findByIdAndUpdate(rentalId, {
         $set: {
             status: 'completed',
             updatedAt: new Date()
@@ -249,6 +240,5 @@ const completeRental = (req, res) => __awaiter(void 0, void 0, void 0, function*
         message: 'Rental marked as completed',
         data: updatedRental
     });
-});
+};
 exports.completeRental = completeRental;
-//# sourceMappingURL=rental.controller.js.map

@@ -1,23 +1,19 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getOwnerCars = exports.getUserPurchases = exports.getSoldCars = exports.purchaseCar = exports.getCarForSaleListings = exports.getRentalCarListings = exports.getCarById = exports.addReview = exports.deleteCar = exports.addCar = void 0;
+const cloudinary_1 = require("cloudinary");
 const mongoose_1 = require("mongoose");
 const Car_1 = __importDefault(require("../models/Car"));
 const Buy_1 = require("../models/Buy");
-const addCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+cloudinary_1.v2.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_SECRET_KEY
+});
+const addCar = async (req, res) => {
     try {
         const ownerId = res.locals.userId;
         if (!(0, mongoose_1.isValidObjectId)(ownerId)) {
@@ -28,12 +24,13 @@ const addCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         console.log(req.body);
         const images = Array.isArray(req.files)
-            ? req.files.map((file) => ({
-                filename: file.filename,
-                path: `/uploads/${file.filename}`
-            }))
+            ? req.files.map((file) => (file))
             : [];
-        let rev = [];
+        let imagesUrl = await Promise.all(images.map(async (item) => {
+            let result = await cloudinary_1.v2.uploader.upload(item.path, { resource_type: 'image' });
+            return result.secure_url;
+        }));
+        console.log(imagesUrl);
         const carData = {
             owner: ownerId,
             brand: req.body.brand,
@@ -50,8 +47,8 @@ const addCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             advanceFeatures: req.body.advanceFeatures || [],
             singleChargeRange: req.body.singleChargeRange,
             description: req.body.description,
-            reviews: rev,
-            images: images,
+            reviews: [],
+            images: imagesUrl,
             purpose: req.body.purpose
         };
         if (carData.fuelType === 'Electric' && !carData.singleChargeRange) {
@@ -61,7 +58,7 @@ const addCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             });
         }
         const newCar = new Car_1.default(carData);
-        yield newCar.save();
+        await newCar.save();
         const responseCar = newCar.toObject();
         delete responseCar.__v;
         delete responseCar.reviews;
@@ -77,7 +74,7 @@ const addCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         //         require('fs').unlinkSync(file.path);
         //     });
         // }
-        if (error.code === 11000 && ((_a = error.keyPattern) === null || _a === void 0 ? void 0 : _a.carRegistrationNumber)) {
+        if (error.code === 11000 && error.keyPattern?.carRegistrationNumber) {
             return res.status(400).json({
                 success: false,
                 message: 'Car registration number already exists'
@@ -103,9 +100,9 @@ const addCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
-});
+};
 exports.addCar = addCar;
-const deleteCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteCar = async (req, res) => {
     try {
         const ownerId = res.locals.userId;
         const carId = req.body._id;
@@ -115,7 +112,7 @@ const deleteCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 message: 'Invalid car ID format'
             });
         }
-        const car = yield Car_1.default.findById(carId);
+        const car = await Car_1.default.findById(carId);
         if (!car) {
             return res.status(404).json({
                 success: false,
@@ -128,7 +125,7 @@ const deleteCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 message: 'Unauthorized: You can only delete your own cars'
             });
         }
-        yield Car_1.default.deleteOne({ _id: carId });
+        await Car_1.default.deleteOne({ _id: carId });
         res.status(200).json({
             success: true,
             message: 'Car deleted successfully',
@@ -141,9 +138,9 @@ const deleteCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             message: 'Failed to delete car'
         });
     }
-});
+};
 exports.deleteCar = deleteCar;
-const addReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const addReview = async (req, res) => {
     try {
         const carId = req.body.carId;
         const userId = res.locals.userId;
@@ -159,7 +156,7 @@ const addReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 message: 'Rating must be between 1 and 5'
             });
         }
-        const car = yield Car_1.default.findById(carId);
+        const car = await Car_1.default.findById(carId);
         if (!car) {
             return res.status(404).json({
                 success: false,
@@ -180,7 +177,7 @@ const addReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             createdAt: new Date()
         };
         car.reviews.push(newReview);
-        yield car.save();
+        await car.save();
         const response = {
             success: true,
             message: 'Review added successfully'
@@ -193,10 +190,9 @@ const addReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             message: 'Failed to add review'
         });
     }
-});
+};
 exports.addReview = addReview;
-const getCarById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b;
+const getCarById = async (req, res) => {
     try {
         const carId = req.body.id;
         if (!(0, mongoose_1.isValidObjectId)(carId)) {
@@ -205,7 +201,7 @@ const getCarById = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 message: 'Invalid car ID format'
             });
         }
-        const car = yield Car_1.default.findById(carId)
+        const car = await Car_1.default.findById(carId)
             .populate('owner', 'name email')
             .populate('reviews.user', 'name')
             .lean();
@@ -220,7 +216,11 @@ const getCarById = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             const sum = car.reviews.reduce((acc, review) => acc + review.rating, 0);
             averageRating = parseFloat((sum / car.reviews.length).toFixed(1));
         }
-        const responseData = Object.assign(Object.assign({}, car), { averageRating, reviewCount: ((_b = car.reviews) === null || _b === void 0 ? void 0 : _b.length) || 0 });
+        const responseData = {
+            ...car,
+            averageRating,
+            reviewCount: car.reviews?.length || 0
+        };
         delete responseData.__v;
         res.status(200).json({
             success: true,
@@ -233,16 +233,16 @@ const getCarById = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             message: 'Failed to fetch car details',
         });
     }
-});
+};
 exports.getCarById = getCarById;
-const getRentalCarListings = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getRentalCarListings = async (req, res) => {
     try {
         const filter = {};
         filter.purpose = 'rent';
         if (req.body.brand) {
             filter.brand = req.body.brand;
         }
-        const cars = yield Car_1.default.find(filter)
+        const cars = await Car_1.default.find(filter)
             .select('images brand model price location year capacity reviews')
             .lean();
         console.log(cars);
@@ -268,16 +268,16 @@ const getRentalCarListings = (req, res) => __awaiter(void 0, void 0, void 0, fun
             message: 'Failed to fetch car listings'
         });
     }
-});
+};
 exports.getRentalCarListings = getRentalCarListings;
-const getCarForSaleListings = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getCarForSaleListings = async (req, res) => {
     try {
         const filter = {};
         filter.purpose = 'sale';
         if (req.body.brand) {
             filter.brand = req.body.brand;
         }
-        const cars = yield Car_1.default.find(filter)
+        const cars = await Car_1.default.find(filter)
             .select('images brand model price location year capacity reviews')
             .lean();
         console.log(cars);
@@ -303,13 +303,13 @@ const getCarForSaleListings = (req, res) => __awaiter(void 0, void 0, void 0, fu
             message: 'Failed to fetch car listings'
         });
     }
-});
+};
 exports.getCarForSaleListings = getCarForSaleListings;
-const purchaseCar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const purchaseCar = async (req, res) => {
     const { carId } = req.body;
     const buyerId = res.locals.userId;
     try {
-        const car = yield Car_1.default.findById(carId);
+        const car = await Car_1.default.findById(carId);
         if (!car) {
             return res.status(404).json({ message: 'Car not found' });
         }
@@ -317,8 +317,8 @@ const purchaseCar = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             car: carId,
             buyer: buyerId
         });
-        yield newPurchase.save();
-        yield Car_1.default.findByIdAndUpdate(carId, { status: 'sold' });
+        await newPurchase.save();
+        await Car_1.default.findByIdAndUpdate(carId, { status: 'sold' });
         res.status(201).json({
             success: true,
             data: newPurchase
@@ -327,12 +327,12 @@ const purchaseCar = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     catch (error) {
         res.status(500).json({ success: false, message: 'Server error', error });
     }
-});
+};
 exports.purchaseCar = purchaseCar;
-const getSoldCars = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getSoldCars = async (req, res) => {
     const sellerId = res.locals.userId;
     try {
-        const purchases = yield Buy_1.Buy.find()
+        const purchases = await Buy_1.Buy.find()
             .populate({
             path: 'car',
             match: { owner: sellerId }
@@ -347,12 +347,12 @@ const getSoldCars = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     catch (error) {
         res.status(500).json({ success: false, message: 'Server error', error });
     }
-});
+};
 exports.getSoldCars = getSoldCars;
-const getUserPurchases = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getUserPurchases = async (req, res) => {
     const userId = res.locals.userId;
     try {
-        const userPurchases = yield Buy_1.Buy.find({ buyer: userId })
+        const userPurchases = await Buy_1.Buy.find({ buyer: userId })
             .populate('car', 'brand model priceAtPurchase');
         res.status(200).json({
             success: true,
@@ -362,12 +362,12 @@ const getUserPurchases = (req, res) => __awaiter(void 0, void 0, void 0, functio
     catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
     }
-});
+};
 exports.getUserPurchases = getUserPurchases;
-const getOwnerCars = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getOwnerCars = async (req, res) => {
     const ownerId = res.locals.userId;
     try {
-        const Cars = yield Car_1.default.find({
+        const Cars = await Car_1.default.find({
             owner: ownerId,
         });
         res.status(200).json({
@@ -381,7 +381,7 @@ const getOwnerCars = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             message: 'Server error'
         });
     }
-});
+};
 exports.getOwnerCars = getOwnerCars;
 /*
 
@@ -402,4 +402,3 @@ exports.getOwnerCars = getOwnerCars;
 
 
 */ 
-//# sourceMappingURL=car.controller.js.map

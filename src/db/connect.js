@@ -10,4 +10,3 @@ const connectDB = (url) => {
     return mongoose_1.default.connect(url);
 };
 exports.connectDB = connectDB;
-//# sourceMappingURL=connect.js.map

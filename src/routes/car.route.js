@@ -52,4 +52,3 @@ router.get('/getownercars', verify_token_1.verify, (0, asyncWrapper_1.asyncWrapp
 // todo
 // 
 exports.default = router;
-//# sourceMappingURL=car.route.js.map

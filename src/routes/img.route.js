@@ -43,4 +43,3 @@ const router = (0, express_1.Router)();
 //     else res.send({ ok: 0 });
 // }))
 exports.default = router;
-//# sourceMappingURL=img.route.js.map

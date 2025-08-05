@@ -9,4 +9,3 @@ const asyncWrapper = (asycnFn) => {
     };
 };
 exports.asyncWrapper = asyncWrapper;
-//# sourceMappingURL=asyncWrapper.js.map

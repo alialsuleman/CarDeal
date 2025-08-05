@@ -63,4 +63,3 @@ RentalSchema.virtual('durationDays').get(function () {
 });
 const Rental = (0, mongoose_1.model)('Rental', RentalSchema);
 exports.default = Rental;
-//# sourceMappingURL=rental.js.map

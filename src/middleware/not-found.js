@@ -6,4 +6,3 @@ const notFound = (_, res) => res.status(404).send({
     message: 'Route does not exist!'
 });
 exports.notFound = notFound;
-//# sourceMappingURL=not-found.js.map

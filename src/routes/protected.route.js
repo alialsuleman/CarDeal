@@ -7,4 +7,3 @@ const protected_controller_1 = require("../controllers/protected.controller");
 // sample route - just put the verify middleware before any route here for JWT validation.
 router.get('/', verify_token_1.verify, protected_controller_1.sampleController);
 exports.default = router;
-//# sourceMappingURL=protected.route.js.map

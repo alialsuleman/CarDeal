@@ -30,4 +30,3 @@ router.post('/addavatar', verify_token_1.verify, upload.single('image'), (0, asy
 router.post('/getuseravatar', (0, asyncWrapper_1.asyncWrapper)(user_controller_1.getAvatar));
 exports.default = router;
 notification_controller_1.getUserNotifications;
-//# sourceMappingURL=user.route.js.map

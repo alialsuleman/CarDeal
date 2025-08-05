@@ -7,10 +7,7 @@ const CarSchema = new mongoose_1.Schema({
         ref: 'User',
         required: true
     },
-    images: [{
-            filename: String,
-            path: String
-        }],
+    images: [String],
     brand: {
         type: String,
         required: true,
@@ -141,4 +138,3 @@ CarSchema.index({ carRegistrationNumber: 1 }, { unique: true });
 CarSchema.index({ 'reviews.rating': 1 });
 const Car = (0, mongoose_1.model)('Car', CarSchema);
 exports.default = Car;
-//# sourceMappingURL=Car.js.map

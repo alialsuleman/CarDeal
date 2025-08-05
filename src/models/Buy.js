@@ -8,4 +8,3 @@ const BuySchema = new mongoose_1.Schema({
     purchaseDate: { type: Date, default: Date.now },
 });
 exports.Buy = (0, mongoose_1.model)('Buy', BuySchema);
-//# sourceMappingURL=Buy.js.map

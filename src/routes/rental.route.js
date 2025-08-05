@@ -19,4 +19,3 @@ exports.default = router;
 // getOwnerRentals
 // getCarRentals
 // completeRental
-//# sourceMappingURL=rental.route.js.map
