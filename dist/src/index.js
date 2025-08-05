@@ -12,6 +12,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const express_1 = __importDefault(require("express"));
 const connect_1 = require("./db/connect");
 const not_found_1 = require("./middleware/not-found");
@@ -22,7 +24,6 @@ const img_route_1 = __importDefault(require("./routes/img.route"));
 const car_route_1 = __importDefault(require("./routes/car.route"));
 const rental_route_1 = __importDefault(require("./routes/rental.route"));
 const buy_route_1 = __importDefault(require("./routes/buy.route"));
-const dotenv_1 = __importDefault(require("dotenv"));
 const cors_1 = __importDefault(require("cors"));
 const env_1 = require("../env");
 const app = (0, express_1.default)();

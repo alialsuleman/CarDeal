@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express'
 
 import { connectDB } from './db/connect'
@@ -10,7 +12,6 @@ import carRoutes from './routes/car.route'
 import rentalRoutes from './routes/rental.route'
 import buyRoters from './routes/buy.route'
 
-import dotenv from 'dotenv'
 
 import cors from 'cors';
 import { verify } from './middleware/verify-token'
